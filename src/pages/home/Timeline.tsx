@@ -1,6 +1,6 @@
 import { useAuth } from '../../lib/auth-context'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote } from '../../lib/photo-store'
+import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote, getScoreLabel } from '../../lib/photo-store'
 import { t, getLang } from '../../lib/i18n'
 
 function getMonthAge(birthday: string): number {
@@ -57,24 +57,11 @@ export default function Timeline() {
   const [longPressId, setLongPressId] = useState<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Rating labels
+  // Rating labels (shared with photo-store)
   const ratingLabels = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
 
-  // State for photo ratings
+  // State for photo ratings - use scores stored in database
   const [ratings, setRatings] = useState<Record<string, { score: number; label: string }>>({})
-
-  // Compute photo ratings (simple heuristic - Cloudflare AI inspired)
-  useEffect(() => {
-    const newRatings: Record<string, { score: number; label: string }> = {}
-    photos.forEach(p => {
-      const base = Math.floor(Math.random() * 20) + 65
-      const random = Math.floor(Math.random() * 15)
-      const score = Math.min(100, Math.max(0, base + random))
-      const label = ratingLabels[Math.min(Math.floor(score / 20), ratingLabels.length - 1)]
-      newRatings[p.id] = { score, label }
-    })
-    setRatings(newRatings)
-  }, [photos])
 
   useEffect(() => {
     getPhotos().then(p => { 
@@ -251,7 +238,9 @@ export default function Timeline() {
               <h2 className="date-label">{g.label}</h2>
               <div className="grid grid-cols-2 gap-5 stagger-children">
                 {g.photos.map((p, i) => {
-                  const rating = ratings[p.id] || { score: 0, label: '' }
+                  // Use stored score if available, otherwise derive from label
+                  const { score = 80, label } = p
+                  const displayLabel = label || getScoreLabel(score)
                   return (
                     <div
                       key={p.id}
@@ -268,10 +257,10 @@ export default function Timeline() {
                         <div className="washi-tape absolute top-0 left-0 w-full h-full pointer-events-none z-10"></div>
                         <img src={p.thumbnail} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" alt={p.note || ''} loading="lazy" />
                         {/* Photo rating */}
-                        {rating.label && (
+                        {displayLabel && (
                           <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                             <span className="bg-white/90 dark:bg-black/80 px-2 py-0.5 rounded-lg text-xs font-display font-bold text-[var(--color-primary)] shadow-sm">
-                              {rating.score}/100
+                              {score}/100
                             </span>
                           </div>
                         )}
@@ -279,9 +268,9 @@ export default function Timeline() {
                           {p.note || ' '}
                         </p>
                         {/* Rating label */}
-                        {rating.label && (
+                        {displayLabel && (
                           <p className="font-hand text-center text-[var(--color-primary)] mt-1 px-1 text-xs animate-wiggle">
-                            {rating.label}
+                            {displayLabel}
                           </p>
                         )}
                       </div>

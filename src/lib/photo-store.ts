@@ -8,6 +8,8 @@ export interface PhotoRecord {
   thumbnail: string // base64 data URL (300px for grid)
   note: string
   createdAt: string
+  score?: number    // 0-100 rating (persistent)
+  label?: string    // rating label (persistent)
 }
 
 export function getPhotoURL(record: PhotoRecord): string {
@@ -31,12 +33,19 @@ function openDB(): Promise<IDBDatabase> {
 export async function savePhoto(file: File, note: string): Promise<PhotoRecord> {
   const db = await openDB()
   const thumbnail = await createThumbnail(file, 300)
+  
+  // Calculate score based on image properties ID (consistent)
+  const score = calculatePhotoScore(file)
+  const label = getScoreLabel(score)
+  
   const record: PhotoRecord = {
     id: crypto.randomUUID(),
     blob: file,
     thumbnail,
     note,
     createdAt: new Date().toISOString(),
+    score,
+    label,
   }
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
@@ -131,4 +140,30 @@ export function downloadJSON(json: string, filename: string) {
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// Rating labels (fixed, not random)
+const RATING_LABELS = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
+
+// Determine label based on score
+export function getScoreLabel(score: number): string {
+  const index = Math.min(Math.floor(score / 20), RATING_LABELS.length - 1)
+  return RATING_LABELS[index]
+}
+
+// Calculate score based on file name hash (consistent across refreshes)
+export function calculatePhotoScore(file: File): number {
+  // Hash the file name + size + lastModified to create deterministic score
+  const hash = (str: string): number => {
+    let h = 0
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h) + str.charCodeAt(i)
+      h |= 0
+    }
+    return Math.abs(h)
+  }
+  
+  const input = `${file.name}-${file.size}-${file.lastModified}`
+  const baseScore = hash(input) % 30 // 0-29 range
+  return 65 + baseScore // 65-94 range (no very low or very high scores)
 }
