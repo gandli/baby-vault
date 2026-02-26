@@ -6,7 +6,7 @@ interface Milestone {
   id: string
   emoji: string
   name: string
-  nameKey?: string // i18n key
+  nameKey?: string
   doneAt?: string
 }
 
@@ -83,65 +83,118 @@ export default function Milestones() {
 
   const done = milestones.filter(m => m.doneAt)
   const todo = milestones.filter(m => !m.doneAt)
+  const progress = milestones.length ? (done.length / milestones.length) * 100 : 0
 
   return (
-    <div className="px-4 pt-6 pb-24">
+    <div className="px-4 pt-6 pb-24 paper-texture">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('milestones')}</h1>
-        <span className="text-sm text-gray-400">{done.length}/{milestones.length} {t('done')}</span>
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">{t('milestones')}</h1>
+        <div className="sticker">
+          {done.length}/{milestones.length}
+        </div>
       </div>
 
-      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6 overflow-hidden">
-        <div className="h-full bg-[#FFD966] rounded-full transition-all duration-500"
-          style={{ width: `${milestones.length ? (done.length / milestones.length) * 100 : 0}%` }} />
+      {/* Progress bar - wavy style */}
+      <div className="relative h-3 bg-[var(--color-border)] rounded-full mb-8 overflow-hidden">
+        <div 
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+          style={{ 
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, var(--color-success), var(--color-accent))'
+          }}
+        />
+        {progress > 0 && (
+          <div 
+            className="absolute inset-y-0 left-0 rounded-full opacity-30"
+            style={{ 
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
+              animation: 'shimmer 2s infinite',
+              backgroundSize: '200% 100%'
+            }}
+          />
+        )}
       </div>
 
+      {/* Todo milestones */}
       <div className="space-y-3 mb-6">
         {todo.map(m => (
-          <button key={m.id} onClick={() => toggle(m.id)}
-            className="w-full flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 active:scale-[0.98] transition-transform text-left">
-            <span className="text-2xl">{m.emoji}</span>
-            <span className="flex-1 text-gray-700 dark:text-gray-200 font-medium">{getMilestoneName(m)}</span>
-            <span className="text-gray-300 text-xl">○</span>
+          <button
+            key={m.id}
+            onClick={() => toggle(m.id)}
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] active:scale-[0.98] transition-all duration-200 text-left shadow-sm hover:shadow-md"
+          >
+            <span className="text-3xl">{m.emoji}</span>
+            <span className="flex-1 text-[var(--color-text)] font-medium">{getMilestoneName(m)}</span>
+            <span className="w-7 h-7 rounded-full border-2 border-[var(--color-border)] flex items-center justify-center text-transparent">
+              ○
+            </span>
           </button>
         ))}
       </div>
 
+      {/* Add custom */}
       {adding ? (
-        <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 space-y-3 mb-6">
-          <div className="flex gap-2">
-            <input type="text" value={newEmoji} onChange={e => setNewEmoji(e.target.value)}
-              className="w-14 px-2 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-center text-xl" maxLength={2} />
-            <input type="text" placeholder={t('milestoneName')} value={newName} onChange={e => setNewName(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-              autoFocus onKeyDown={e => e.key === 'Enter' && addCustom()} />
+        <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 mb-6 animate-scale-in">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newEmoji}
+              onChange={e => setNewEmoji(e.target.value)}
+              className="w-14 px-2 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-center text-2xl"
+              maxLength={2}
+            />
+            <input
+              type="text"
+              placeholder={t('milestoneName')}
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && addCustom()}
+            />
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setAdding(false)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">{t('cancel')}</button>
-            <button onClick={addCustom} className="flex-1 py-2 rounded-lg bg-[#6CB4EE] text-white text-sm">{t('add')}</button>
+          <div className="flex gap-3">
+            <button onClick={() => setAdding(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] text-sm">
+              {t('cancel')}
+            </button>
+            <button onClick={addCustom} className="flex-1 py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium">
+              {t('add')}
+            </button>
           </div>
         </div>
       ) : (
-        <button onClick={() => setAdding(true)}
-          className="w-full p-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 text-gray-400 text-sm active:scale-[0.98] transition-transform mb-6">
+        <button
+          onClick={() => setAdding(true)}
+          className="w-full p-4 rounded-2xl border-2 border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] text-sm active:scale-[0.98] transition-all duration-200 mb-6 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
           {t('addCustom')}
         </button>
       )}
 
+      {/* Completed milestones */}
       {done.length > 0 && (
         <>
-          <h2 className="text-sm font-medium text-gray-400 mb-3">{t('completed')}</h2>
+          <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-4 pl-1">{t('completed')}</h2>
           <div className="space-y-3">
             {done.map(m => (
-              <div key={m.id} className="w-full flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800">
-                <span className="text-2xl">{m.emoji}</span>
+              <div
+                key={m.id}
+                className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--color-success-light)]/30 border border-[var(--color-success)]/20"
+              >
+                <span className="text-3xl">{m.emoji}</span>
                 <div className="flex-1">
-                  <span className="text-gray-700 dark:text-gray-200 font-medium">{getMilestoneName(m)}</span>
-                  <p className="text-xs text-gray-400">{new Date(m.doneAt!).toLocaleDateString()}</p>
+                  <span className="text-[var(--color-text)] font-medium">{getMilestoneName(m)}</span>
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {new Date(m.doneAt!).toLocaleDateString()}
+                  </p>
                 </div>
-                <button onClick={() => toggle(m.id)} className="text-green-500 text-xl">✓</button>
+                <button onClick={() => toggle(m.id)} className="w-7 h-7 rounded-full bg-[var(--color-success)] text-white flex items-center justify-center">
+                  ✓
+                </button>
                 {!m.id.startsWith('preset-') && (
-                  <button onClick={() => remove(m.id)} className="text-red-400 text-sm ml-1">{t('delete')}</button>
+                  <button onClick={() => remove(m.id)} className="text-red-400 text-xs px-2">{t('delete')}</button>
                 )}
               </div>
             ))}
@@ -149,25 +202,39 @@ export default function Milestones() {
         </>
       )}
 
+      {/* Date picker modal */}
       {datePickId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setDatePickId(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-8 space-y-4 animate-fade-in" onClick={e => e.stopPropagation()}>
-            <p className="text-gray-700 dark:text-gray-200 text-center font-medium">
-              🎉 {getMilestoneName(milestones.find(m => m.id === datePickId)!)}
-            </p>
-            <p className="text-sm text-gray-400 text-center">{t('selectDate')}</p>
-            <input type="date" value={pickDate} onChange={e => setPickDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm" />
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-fade-in" onClick={() => setDatePickId(null)}>
+          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-8 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <span className="text-4xl">{milestones.find(m => m.id === datePickId)?.emoji}</span>
+              <p className="text-[var(--color-text)] font-semibold mt-2">
+                🎉 {getMilestoneName(milestones.find(m => m.id === datePickId)!)}
+              </p>
+            </div>
+            <p className="text-sm text-[var(--color-text-muted)] text-center">{t('selectDate')}</p>
+            <input
+              type="date"
+              value={pickDate}
+              onChange={e => setPickDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+            />
             <div className="flex gap-3">
-              <button onClick={() => setDatePickId(null)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">{t('cancel')}</button>
-              <button onClick={confirmDate} className="flex-1 py-2 rounded-lg bg-[#6CB4EE] text-white text-sm">{t('confirm')}</button>
+              <button onClick={() => setDatePickId(null)} className="flex-1 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)]">
+                {t('cancel')}
+              </button>
+              <button onClick={confirmDate} className="flex-1 py-3 rounded-xl bg-[var(--color-success)] text-white font-medium">
+                {t('confirm')}
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {user?.babyName && (
-        <p className="text-center text-xs text-gray-300 mt-8">{user.babyName}{t('cheerUp')}</p>
+        <p className="text-center text-sm text-[var(--color-text-muted)] mt-8">
+          {user.babyName}{t('cheerUp')}
+        </p>
       )}
     </div>
   )
