@@ -35,7 +35,8 @@ function groupByDate(photos: PhotoRecord[]): { label: string; photos: PhotoRecor
 
 // Determine rotation based on index to create natural scatter effect
 function getRotation(index: number): number {
-  const sequence = [2.5, -3.2, 1.8, -1.5, 2.2, -2.8, 1.1, -3.5]
+  // Subtle rotation: -2.5deg to +2.5deg for realistic photo scatter
+  const sequence = [1.2, -1.8, 2.1, -1.5, 0.8, -2.2, 1.6, -0.9]
   return sequence[index % sequence.length]
 }
 
