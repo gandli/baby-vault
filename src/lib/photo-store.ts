@@ -70,6 +70,24 @@ export async function deletePhoto(id: string): Promise<void> {
   })
 }
 
+export async function updatePhotoNote(id: string, note: string): Promise<void> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME)
+    const req = store.get(id)
+    req.onsuccess = () => {
+      const record = req.result
+      if (record) {
+        record.note = note
+        const putReq = store.put(record)
+        putReq.onsuccess = () => resolve()
+        putReq.onerror = () => reject(putReq.error)
+      } else resolve()
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
 function createThumbnail(file: File, maxSize: number): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image()
@@ -85,4 +103,32 @@ function createThumbnail(file: File, maxSize: number): Promise<string> {
     }
     img.src = URL.createObjectURL(file)
   })
+}
+
+export async function exportData(): Promise<string> {
+  const photos = await getPhotos()
+  const data = photos.map(p => ({
+    id: p.id,
+    note: p.note,
+    createdAt: p.createdAt,
+    thumbnail: p.thumbnail,
+  }))
+  return JSON.stringify({
+    version: '0.1.0',
+    exportedAt: new Date().toISOString(),
+    user: JSON.parse(localStorage.getItem('babyvault_user') || '{}'),
+    milestones: JSON.parse(localStorage.getItem('babyvault_milestones') || '[]'),
+    photos: data,
+    photoCount: data.length,
+  }, null, 2)
+}
+
+export function downloadJSON(json: string, filename: string) {
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }

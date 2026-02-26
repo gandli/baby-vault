@@ -1,16 +1,29 @@
 import { useState } from 'react'
 import { useAuth } from '../../lib/auth-context'
+import { exportData, downloadJSON } from '../../lib/photo-store'
 
 export default function Settings() {
   const { user, logout, updateUser } = useAuth()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(user?.babyName || '')
   const [birthday, setBirthday] = useState(user?.babyBirthday || '')
+  const [exporting, setExporting] = useState(false)
 
   const handleSave = () => {
     if (!name.trim() || !birthday) return
     updateUser({ babyName: name.trim(), babyBirthday: birthday })
     setEditing(false)
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const json = await exportData()
+      const date = new Date().toISOString().slice(0, 10)
+      downloadJSON(json, `babyvault-backup-${date}.json`)
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -75,6 +88,18 @@ export default function Settings() {
           <p className="text-gray-700 dark:text-gray-200">本地浏览器 (MVP)</p>
           <p className="text-xs text-gray-400 mt-1">🔒 数据未离开此设备</p>
         </div>
+
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="w-full p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-left active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          <p className="text-sm text-gray-400">数据备份</p>
+          <p className="text-gray-700 dark:text-gray-200">
+            {exporting ? '导出中…' : '📦 导出 JSON 备份'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">包含宝宝信息、里程碑、照片缩略图</p>
+        </button>
 
         <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
           <p className="text-sm text-gray-400">版本</p>

@@ -40,12 +40,29 @@ export default function Milestones() {
   const [newName, setNewName] = useState('')
   const [newEmoji, setNewEmoji] = useState('⭐')
 
+  const [datePickId, setDatePickId] = useState<string | null>(null)
+  const [pickDate, setPickDate] = useState('')
+
   useEffect(() => { saveMilestones(milestones) }, [milestones])
 
   const toggle = (id: string) => {
+    const m = milestones.find(m => m.id === id)
+    if (m?.doneAt) {
+      // Undo
+      setMilestones(prev => prev.map(m => m.id === id ? { ...m, doneAt: undefined } : m))
+    } else {
+      // Show date picker
+      setDatePickId(id)
+      setPickDate(new Date().toISOString().slice(0, 10))
+    }
+  }
+
+  const confirmDate = () => {
+    if (!datePickId || !pickDate) return
     setMilestones(prev => prev.map(m =>
-      m.id === id ? { ...m, doneAt: m.doneAt ? undefined : new Date().toISOString() } : m
+      m.id === datePickId ? { ...m, doneAt: new Date(pickDate).toISOString() } : m
     ))
+    setDatePickId(null)
   }
 
   const addCustom = () => {
@@ -155,6 +172,28 @@ export default function Milestones() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Date picker modal */}
+      {datePickId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setDatePickId(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-8 space-y-4 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <p className="text-gray-700 dark:text-gray-200 text-center font-medium">
+              🎉 {milestones.find(m => m.id === datePickId)?.name}
+            </p>
+            <p className="text-sm text-gray-400 text-center">选择完成日期</p>
+            <input
+              type="date"
+              value={pickDate}
+              onChange={e => setPickDate(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setDatePickId(null)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">取消</button>
+              <button onClick={confirmDate} className="flex-1 py-2 rounded-lg bg-[#6CB4EE] text-white text-sm">确认</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {user?.babyName && (

@@ -1,6 +1,6 @@
 import { useAuth } from '../../lib/auth-context'
-import { useEffect, useRef, useState } from 'react'
-import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL } from '../../lib/photo-store'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote } from '../../lib/photo-store'
 
 function getMonthAge(birthday: string): number {
   const birth = new Date(birthday)
@@ -8,30 +8,49 @@ function getMonthAge(birthday: string): number {
   return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '刚刚'
-  if (mins < 60) return `${mins} 分钟前`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours} 小时前`
-  const days = Math.floor(hours / 24)
-  return `${days} 天前`
+function getDayAge(birthday: string): number {
+  const birth = new Date(birthday)
+  const now = new Date()
+  return Math.floor((now.getTime() - birth.getTime()) / 86400000)
+}
+
+function groupByDate(photos: PhotoRecord[]): { label: string; photos: PhotoRecord[] }[] {
+  const now = new Date()
+  const today = now.toDateString()
+  const yesterday = new Date(now.getTime() - 86400000).toDateString()
+
+  const groups: Map<string, PhotoRecord[]> = new Map()
+  for (const p of photos) {
+    const d = new Date(p.createdAt).toDateString()
+    let label: string
+    if (d === today) label = '今天'
+    else if (d === yesterday) label = '昨天'
+    else label = new Date(p.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
+    if (!groups.has(label)) groups.set(label, [])
+    groups.get(label)!.push(p)
+  }
+  return Array.from(groups.entries()).map(([label, photos]) => ({ label, photos }))
 }
 
 export default function Timeline() {
   const { user } = useAuth()
   const monthAge = user?.babyBirthday ? getMonthAge(user.babyBirthday) : 0
+  const dayAge = user?.babyBirthday ? getDayAge(user.babyBirthday) : 0
   const fileRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PhotoRecord[]>([])
+  const [loading, setLoading] = useState(true)
   const [showNote, setShowNote] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [viewing, setViewing] = useState<PhotoRecord | null>(null)
+  const [editingNote, setEditingNote] = useState(false)
+  const [viewNote, setViewNote] = useState('')
+  const [longPressId, setLongPressId] = useState<string | null>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
-    getPhotos().then(setPhotos)
+    getPhotos().then(p => { setPhotos(p); setLoading(false) })
   }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,16 +79,36 @@ export default function Timeline() {
   const handleDelete = async (id: string) => {
     await deletePhoto(id)
     setPhotos(prev => prev.filter(p => p.id !== id))
+    setLongPressId(null)
   }
 
+  const handleSaveNote = async () => {
+    if (!viewing) return
+    await updatePhotoNote(viewing.id, viewNote)
+    setPhotos(prev => prev.map(p => p.id === viewing.id ? { ...p, note: viewNote } : p))
+    setViewing(prev => prev ? { ...prev, note: viewNote } : null)
+    setEditingNote(false)
+  }
+
+  // Long press for mobile delete
+  const onTouchStart = useCallback((id: string) => {
+    longPressTimer.current = setTimeout(() => setLongPressId(id), 500)
+  }, [])
+
+  const onTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+  }, [])
+
+  const groups = groupByDate(photos)
+
   return (
-    <div className="px-4 pt-6">
+    <div className="px-4 pt-6 pb-24">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-800 dark:text-white">
             {user?.babyName}的时间线
           </h1>
-          <p className="text-sm text-gray-400">{monthAge} 个月</p>
+          <p className="text-sm text-gray-400">{monthAge} 个月 · 第 {dayAge} 天</p>
         </div>
         <button
           onClick={() => fileRef.current?.click()}
@@ -87,10 +126,10 @@ export default function Timeline() {
         />
       </div>
 
-      {/* Note modal */}
+      {/* Upload modal */}
       {showNote && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-t-2xl p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-t-2xl p-6 space-y-4 animate-slide-up">
             {pendingFile && (
               <img
                 src={URL.createObjectURL(pendingFile)}
@@ -105,6 +144,7 @@ export default function Timeline() {
               onChange={e => setNote(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6CB4EE]"
               autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
             />
             <div className="flex gap-3">
               <button
@@ -127,47 +167,98 @@ export default function Timeline() {
 
       {/* Fullscreen viewer */}
       {viewing && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col" onClick={() => setViewing(null)}>
+        <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
           <div className="flex items-center justify-between p-4">
-            <button onClick={() => setViewing(null)} className="text-white text-lg">✕</button>
+            <button onClick={() => { setViewing(null); setEditingNote(false) }} className="text-white text-lg">✕</button>
             <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleString('zh-CN')}</span>
             <button
-              onClick={(e) => { e.stopPropagation(); handleDelete(viewing.id); setViewing(null) }}
+              onClick={() => { handleDelete(viewing.id); setViewing(null) }}
               className="text-red-400 text-sm"
             >
               删除
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
+          <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
             <img
               src={getPhotoURL(viewing)}
-              className="max-w-full max-h-[70vh] object-contain rounded-xl"
+              className="max-w-full max-h-[65vh] object-contain rounded-xl"
               alt={viewing.note || '照片'}
             />
           </div>
-          {viewing.note && (
-            <p className="text-white text-center px-6 py-4 text-sm">{viewing.note}</p>
-          )}
-          <div className="h-8" />
+          <div className="px-6 py-4">
+            {editingNote ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={viewNote}
+                  onChange={e => setViewNote(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:outline-none"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleSaveNote()}
+                />
+                <button onClick={handleSaveNote} className="text-[#6CB4EE] text-sm px-3">保存</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setEditingNote(true); setViewNote(viewing.note) }}
+                className="text-white/80 text-sm text-center w-full"
+              >
+                {viewing.note || '点击添加备注…'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Photo grid */}
-      {photos.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3">
-          {photos.map(p => (
-            <div key={p.id} className="relative group cursor-pointer" onClick={() => setViewing(p)}>
-              <img
-                src={p.thumbnail}
-                className="w-full aspect-square object-cover rounded-xl"
-                alt={p.note || '照片'}
-              />
-              {p.note && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-xl">
-                  <p className="text-white text-xs truncate">{p.note}</p>
-                </div>
-              )}
-              <p className="text-xs text-gray-400 mt-1">{timeAgo(p.createdAt)}</p>
+      {/* Long press delete confirm */}
+      {longPressId && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" onClick={() => setLongPressId(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-8 space-y-4" onClick={e => e.stopPropagation()}>
+            <p className="text-gray-700 dark:text-gray-200 text-center">删除这张照片？</p>
+            <div className="flex gap-3">
+              <button onClick={() => setLongPressId(null)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">取消</button>
+              <button onClick={() => handleDelete(longPressId)} className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm">删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo grid grouped by date */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <div className="text-3xl animate-pulse">⏳</div>
+          <p className="mt-2 text-sm">加载中…</p>
+        </div>
+      ) : photos.length > 0 ? (
+        <div className="space-y-6">
+          {groups.map(g => (
+            <div key={g.label}>
+              <h2 className="text-sm font-medium text-gray-400 mb-3">{g.label}</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {g.photos.map(p => (
+                  <div
+                    key={p.id}
+                    className="relative cursor-pointer active:scale-[0.97] transition-transform"
+                    onClick={() => { if (!longPressId) { setViewing(p); setEditingNote(false) } }}
+                    onTouchStart={() => onTouchStart(p.id)}
+                    onTouchEnd={onTouchEnd}
+                    onTouchCancel={onTouchEnd}
+                    onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}
+                  >
+                    <img
+                      src={p.thumbnail}
+                      className="w-full aspect-square object-cover rounded-xl"
+                      alt={p.note || '照片'}
+                      loading="lazy"
+                    />
+                    {p.note && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-xl">
+                        <p className="text-white text-xs truncate">{p.note}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
