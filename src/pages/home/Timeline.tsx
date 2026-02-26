@@ -1,6 +1,6 @@
 import { useAuth } from '../../lib/auth-context'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote, getScoreLabel } from '../../lib/photo-store'
+import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote, updatePhotoExif, getScoreLabel, formatPhotoDate, formatGps } from '../../lib/photo-store'
 import { t, getLang } from '../../lib/i18n'
 
 function getMonthAge(birthday: string): number {
@@ -73,6 +73,27 @@ export default function Timeline() {
     window.addEventListener('addPhoto', handleAddPhoto as EventListener)
     return () => window.removeEventListener('addPhoto', handleAddPhoto as EventListener)
   }, [])
+
+  // Edit EXIFmodal state
+  const [editingExif, setEditingExif] = useState(false)
+  const [exifTime, setExifTime] = useState('')
+  const [exifLocation, setExifLocation] = useState('')
+
+  useEffect(() => {
+    if (viewing && viewing.exif?.dateTime) {
+      // Convert YYYY-MM-DDTHH:MM:SS to YYYY-MM-DDThh:mm for input
+      const parts = viewing.exif.dateTime.split('T')
+      if (parts.length === 2) {
+        setExifTime(parts[0] + 'T' + parts[1].slice(0, 5))
+      } else {
+        setExifTime(new Date().toISOString().slice(0, 16))
+      }
+      setExifLocation(formatGps(viewing.exif.latitude, viewing.exif.longitude) || '')
+    } else if (viewing) {
+      setExifTime(viewing.createdAt.slice(0, 16))
+      setExifLocation('')
+    }
+  }, [viewing])
 
   const handleSave = async () => {
     if (!pendingFile) return
@@ -163,19 +184,94 @@ export default function Timeline() {
 
       {/* Fullscreen viewer */}
       {viewing && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col animate-fade-in" onClick={() => { setViewing(null); setEditingNote(false) }}>
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col animate-fade-in" onClick={() => { setViewing(null); setEditingNote(false); setEditingExif(false) }}>
           <div className="flex items-center justify-between p-6 text-white">
-            <button onClick={() => { setViewing(null); setEditingNote(false) }} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+            <button onClick={() => { setViewing(null); setEditingNote(false); setEditingExif(false) }} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
               <span className="text-2xl">✕</span>
             </button>
-            <span className="text-white/70 text-sm">{new Date(viewing.createdAt).toLocaleDateString()}</span>
-            <button onClick={() => { handleDelete(viewing.id); setViewing(null) }} className="text-red-400 text-sm px-4 py-2 font-medium hover:bg-red-500/10 rounded-lg transition-colors">
-              {t('delete')}
-            </button>
+            
+            {/* Photo date/location display */}
+            <div className="flex-1 px-4">
+              {viewing.exif?.dateTime ? (
+                <div className="text-center">
+                  <div className="text-white/80 text-sm mb-1">{formatPhotoDate(viewing.exif.dateTime)}</div>
+                  {viewing.exif.latitude && viewing.exif.longitude && (
+                    <div className="text-white/50 text-xs">{formatGps(viewing.exif.latitude, viewing.exif.longitude)}</div>
+                  )}
+                </div>
+              ) : (
+                <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleDateString()}</span>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setEditingExif(!editingExif)} 
+                className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                title="编辑拍摄信息"
+              >
+                <span>📝</span>
+              </button>
+              <button onClick={() => { handleDelete(viewing.id); setViewing(null) }} className="text-red-400 px-4 py-2 font-medium hover:bg-red-500/10 rounded-lg transition-colors">
+                {t('delete')}
+              </button>
+            </div>
           </div>
+          
+          {/* EXIF edit modal */}
+          {editingExif && (
+            <div className="absolute inset-x-0 bottom-32 bg-[var(--color-bg-card)] rounded-t-2xl p-4 animate-slide-up shadow-2xl">
+              <h3 className="text-[var(--color-text)] font-semibold mb-3">拍摄信息</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-[var(--color-text-muted)] mb-1">拍摄时间</label>
+                  <input
+                    type="datetime-local"
+                    value={exifTime}
+                    onChange={e => setExifTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  />
+                  <button 
+                    onClick={() => {
+                      if (exifTime) {
+                        const date = new Date(exifTime)
+                        const iso = date.toISOString()
+                        updatePhotoExif(viewing.id, { dateTime: iso })
+                          .then(() => {
+                            setViewing(prev => prev ? { ...prev, capturedAt: iso, exif: { ...prev.exif, dateTime: iso } } : null)
+                            setEditingExif(false)
+                          })
+                      }
+                    }}
+                    className="text-xs text-[var(--color-primary)] mt-1"
+                  >
+                    保存时间
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--color-text-muted)] mb-1">位置（可留空）</label>
+                  <input
+                    type="text"
+                    value={exifLocation}
+                    onChange={e => setExifLocation(e.target.value)}
+                    placeholder="例如: 39.9042°N, 116.4074°E"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  />
+                </div>
+                <button 
+                  onClick={() => setEditingExif(false)}
+                  className="w-full py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-light)] text-sm"
+                >
+                  完成
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className="flex-1 flex items-center justify-center px-6" onClick={e => e.stopPropagation()}>
             <img src={getPhotoURL(viewing)} className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl" alt={viewing.note || ''} />
           </div>
+          
           <div className="p-6 pb-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
             {editingNote ? (
               <div className="flex gap-3">
