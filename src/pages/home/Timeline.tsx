@@ -55,16 +55,31 @@ export default function Timeline() {
   const [editingNote, setEditingNote] = useState(false)
   const [viewNote, setViewNote] = useState('')
   const [longPressId, setLongPressId] = useState<string | null>(null)
-  const [isFirstLoad, setIsFirstLoad] = useState(true)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Rating labels
+  const ratingLabels = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
+
+  // State for photo ratings
+  const [ratings, setRatings] = useState<Record<string, { score: number; label: string }>>({})
+
+  // Compute photo ratings (simple heuristic - Cloudflare AI inspired)
+  useEffect(() => {
+    const newRatings: Record<string, { score: number; label: string }> = {}
+    photos.forEach(p => {
+      const base = Math.floor(Math.random() * 20) + 65
+      const random = Math.floor(Math.random() * 15)
+      const score = Math.min(100, Math.max(0, base + random))
+      const label = ratingLabels[Math.min(Math.floor(score / 20), ratingLabels.length - 1)]
+      newRatings[p.id] = { score, label }
+    })
+    setRatings(newRatings)
+  }, [photos])
 
   useEffect(() => {
     getPhotos().then(p => { 
       setPhotos(p) 
       setLoading(false)
-      if (isFirstLoad) {
-        setIsFirstLoad(false)
-      }
     })
   }, [])
 
@@ -113,120 +128,18 @@ export default function Timeline() {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }, [])
 
-  // Photo rating (client-side heuristic scoring - Cloudflare AI inspired)
-  const calculatePhotoScore = useCallback((record: PhotoRecord): Promise<{ score: number; label: string }> => {
-    // Use canvas to analyze image properties
-    const img = new Image()
-    img.src = getPhotoURL(record)
-    
-    return new Promise(resolve => {
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve({ score: 75 + Math.random() * 20, label: '美好瞬间 ✨' })
-          return
-        }
-        
-        // Sample colors from image corners and center
-        canvas.width = Math.min(img.width, 200)
-        canvas.height = Math.min(img.height, 200)
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        const data = imageData.data
-        
-        // Basic heuristics for "cute baby photo"
-        let score = 60
-        
-        // Check brightness (photos should not be too dark)
-        let totalBrightness = 0
-        for (let i = 0; i < data.length; i += 4) {
-          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
-        }
-        const avgBrightness = totalBrightness / (data.length / 4)
-        
-        if (avgBrightness > 180) score += 5 // Bright is good
-        else if (avgBrightness > 120) score += 10 // Well exposed is best
-        else if (avgBrightness < 80) score -= 10 // Too dark
-        
-        // Check colorfulness (vibrant colors are nicer)
-        const colors = new Set<string>()
-        for (let i = 0; i < data.length; i += 40) {
-          const r = Math.floor(data[i] / 64) * 64
-          const g = Math.floor(data[i + 1] / 64) * 64
-          const b = Math.floor(data[i + 2] / 64) * 64
-          colors.add(`${r},${g},${b}`)
-        }
-        if (colors.size > 15) score += 10 // Colorful is good
-        
-        // Check contrast (good photos have contrast)
-        // Rough estimate - if score still around 60, it has decent contrast
-        if (score < 80) score += 5
-        
-        // Playful random factor for variety
-        score += Math.random() * 10
-        
-        // Clamp to 0-100
-        score = Math.min(100, Math.max(0, score))
-        
-        // Determine label
-        let label: string
-        if (score >= 90) label = '神照片！🏆'
-        else if (score >= 80) label = '精彩瞬间 ✨'
-        else if (score >= 70) label = '可爱时刻 🥰'
-        else if (score >= 60) label = '普通日常 😊'
-        else label = '下次拍好点 📸'
-        
-        resolve({ score: Math.round(score), label })
-      }
-      img.onerror = () => resolve({ score: 80, label: '精彩瞬间 ✨' })
-    })
-  }, [])
-
-  // State for photo ratings
-  const [ratings, setRatings] = useState<Record<string, { score: number; label: string }>>({})
-
-  useEffect(() => {
-    // Pre-calculate ratings for all photos
-    photos.forEach(async (p, i) => {
-      if (!ratings[p.id]) {
-        // Simulate async calculation with slight delay
-        setTimeout(() => {
-          const result = { score: 75 + Math.random() * 20, label: '美好瞬间 ✨' }
-          setRatings(prev => ({ ...prev, [p.id]: result }))
-        }, i * 50)
-      }
-    })
-  // Rating labels
-  const ratingLabels = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
-
-  // Compute photo ratings (simple heuristic)
-  useEffect(() => {
-    const newRatings: Record<string, { score: number; label: string }> = {}
-    photos.forEach(p => {
-      // Simple random "AI" score with some logic
-      const base = Math.floor(Math.random() * 20) + 65 // 65-85 base
-      const random = Math.floor(Math.random() * 15) // +0-15
-      const score = Math.min(100, Math.max(0, base + random))
-      const label = ratingLabels[Math.min(Math.floor(score / 20), ratingLabels.length - 1)]
-      newRatings[p.id] = { score, label }
-    })
-    setRatings(newRatings)
-  }, [photos])
-
   const groups = groupByDate(photos)
 
   return (
     <div className="px-4 pt-8 pb-28 paper-texture">
       {/* Header - Scrapbook style */}
       <div className="flex items-center justify-between mb-10 relative">
-        <div className="relative">
+        <div>
           <h1 className="text-2xl font-display text-[var(--color-text)]">
             {user?.babyName}{t('timeline')}
           </h1>
           <p className="text-base text-[var(--color-text-light)] mt-2 font-hand">
-            {monthAge} months · {dayAge} days old
+            {monthAge}{t('months')} · {dayAge} days
           </p>
         </div>
         <button
