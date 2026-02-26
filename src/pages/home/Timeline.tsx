@@ -57,11 +57,7 @@ export default function Timeline() {
   const [longPressId, setLongPressId] = useState<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Rating labels (shared with photo-store)
-  const ratingLabels = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
-
-  // State for photo ratings - use scores stored in database
-  const [ratings, setRatings] = useState<Record<string, { score: number; label: string }>>({})
+  // No state needed - scores are stored in PhotoRecord from database
 
   useEffect(() => {
     getPhotos().then(p => { 
