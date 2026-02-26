@@ -3,11 +3,13 @@ import BottomNav from './BottomNav'
 
 export default function Layout() {
   return (
-    <div className="flex flex-col min-h-dvh">
-      <main className="flex-1 pb-28">
-        <Outlet />
+    <>
+      <main className="flex flex-col min-h-dvh">
+        <div className="flex-1 pb-[9rem]">
+          <Outlet />
+        </div>
       </main>
       <BottomNav />
-    </div>
+    </>
   )
 }
