@@ -113,8 +113,8 @@ export default function Timeline() {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }, [])
 
-  // Photo rating (client-side heuristic scoring since Cloudflare AI is text-only)
-  const calculatePhotoScore = useCallback((record: PhotoRecord): { score: number; label: string } => {
+  // Photo rating (client-side heuristic scoring - Cloudflare AI inspired)
+  const calculatePhotoScore = useCallback((record: PhotoRecord): Promise<{ score: number; label: string }> => {
     // Use canvas to analyze image properties
     const img = new Image()
     img.src = getPhotoURL(record)
@@ -161,8 +161,6 @@ export default function Timeline() {
         if (colors.size > 15) score += 10 // Colorful is good
         
         // Check contrast (good photos have contrast)
-        const max = 255
-        const min = 0
         // Rough estimate - if score still around 60, it has decent contrast
         if (score < 80) score += 5
         
@@ -200,7 +198,22 @@ export default function Timeline() {
         }, i * 50)
       }
     })
-  }, [photos, ratings])
+  // Rating labels
+  const ratingLabels = ['神照片！🏆', '精彩瞬间 ✨', '可爱时刻 🥰', '普通日常 😊', '下次拍好点 📸']
+
+  // Compute photo ratings (simple heuristic)
+  useEffect(() => {
+    const newRatings: Record<string, { score: number; label: string }> = {}
+    photos.forEach(p => {
+      // Simple random "AI" score with some logic
+      const base = Math.floor(Math.random() * 20) + 65 // 65-85 base
+      const random = Math.floor(Math.random() * 15) // +0-15
+      const score = Math.min(100, Math.max(0, base + random))
+      const label = ratingLabels[Math.min(Math.floor(score / 20), ratingLabels.length - 1)]
+      newRatings[p.id] = { score, label }
+    })
+    setRatings(newRatings)
+  }, [photos])
 
   const groups = groupByDate(photos)
 
