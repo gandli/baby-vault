@@ -33,10 +33,10 @@ function groupByDate(photos: PhotoRecord[]): { label: string; photos: PhotoRecor
   return Array.from(groups.entries()).map(([label, photos]) => ({ label, photos }))
 }
 
-// Random rotation for polaroid effect
+// Determine rotation based on index to create natural scatter effect
 function getRotation(index: number): number {
-  const seed = index * 7 + 3
-  return ((seed % 7) - 3) * 0.8
+  const sequence = [1.2, -2.1, 0.8, -0.5, 1.8, -1.4, 0.3, -2.5]
+  return sequence[index % sequence.length]
 }
 
 export default function Timeline() {
@@ -54,10 +54,17 @@ export default function Timeline() {
   const [editingNote, setEditingNote] = useState(false)
   const [viewNote, setViewNote] = useState('')
   const [longPressId, setLongPressId] = useState<string | null>(null)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    getPhotos().then(p => { setPhotos(p); setLoading(false) })
+    getPhotos().then(p => { 
+      setPhotos(p) 
+      setLoading(false)
+      if (isFirstLoad) {
+        setIsFirstLoad(false)
+      }
+    })
   }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,50 +115,55 @@ export default function Timeline() {
   const groups = groupByDate(photos)
 
   return (
-    <div className="px-4 pt-6 pb-24 paper-texture">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+    <div className="px-4 pt-8 pb-28 paper-texture">
+      {/* Header - Scrapbook style */}
+      <div className="flex items-center justify-between mb-10 relative">
+        <div className="relative">
+          <h1 className="text-2xl font-display text-[var(--color-text)]">
             {user?.babyName}{t('timeline')}
           </h1>
-          <p className="text-sm text-[var(--color-text-light)] mt-1">
-            {monthAge}{t('months')} · {t('day', { n: dayAge })}
+          <p className="text-base text-[var(--color-text-light)] mt-2 font-hand">
+            {monthAge} months · {dayAge} days old
           </p>
         </div>
         <button
           onClick={() => fileRef.current?.click()}
-          className="w-14 h-14 rounded-full bg-[var(--color-primary)] text-white text-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all duration-200 hover:shadow-xl"
-          style={{ boxShadow: '0 4px 14px rgba(124, 158, 178, 0.4)' }}
+          className="w-16 h-16 rounded-full bg-[var(--color-primary)] text-white text-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 relative group"
+          style={{ boxShadow: '0 8px 24px rgba(196, 112, 75, 0.35)' }}
         >
-          <span className="relative -top-0.5">+</span>
+          <span className="relative -top-0.5 text-2xl group-hover:translate-y-[-2px] transition-transform duration-200">+</span>
         </button>
         <input ref={fileRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleFileChange} />
       </div>
 
       {/* Upload modal */}
       {showNote && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center animate-fade-in" onClick={() => { setShowNote(false); setPendingFile(null) }}>
-          <div className="bg-[var(--color-bg-card)] w-full max-w-lg rounded-t-3xl p-6 space-y-4 animate-slide-up" onClick={e => e.stopPropagation()}>
-            {pendingFile && (
-              <div className="relative">
-                <img src={URL.createObjectURL(pendingFile)} className="w-full h-48 object-cover rounded-xl" alt="preview" />
-                <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-black/5" />
+        <div className="fixed inset-0 bg-[var(--color-primary-wash)]/60 z-50 flex items-end justify-center animate-fade-in" onClick={() => { setShowNote(false); setPendingFile(null) }}>
+          <div className="bg-[var(--color-bg-card)] w-full max-w-lg rounded-t-3xl p-6 space-y-5 animate-slide-up-sheet" onClick={e => e.stopPropagation()}>
+            <div className="relative">
+              {pendingFile && (
+                <>
+                  <img src={URL.createObjectURL(pendingFile)} className="w-full h-56 object-cover rounded-2xl shadow-sm" alt="preview" />
+                  <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5" />
+                </>
+              )}
+              <div className="absolute top-4 right-4">
+                <span className="sticker animate-stamp">New</span>
               </div>
-            )}
+            </div>
             <textarea
               placeholder={t('recordMoment')}
               value={note}
               onChange={e => setNote(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none font-hand text-base"
+              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none font-hand text-lg leading-relaxed"
               rows={2}
               autoFocus
             />
             <div className="flex gap-3">
-              <button onClick={() => { setShowNote(false); setPendingFile(null) }} className="flex-1 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] font-medium">
+              <button onClick={() => { setShowNote(false); setPendingFile(null) }} className="flex-1 py-3.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] font-semibold transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]">
                 {t('cancel')}
               </button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-xl bg-[var(--color-primary)] text-white font-medium disabled:opacity-50 transition-all">
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 rounded-xl bg-[var(--color-primary)] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-[var(--color-primary-dark)] relative overflow-hidden">
                 {saving ? t('saving') : t('save')}
               </button>
             </div>
@@ -161,29 +173,31 @@ export default function Timeline() {
 
       {/* Fullscreen viewer */}
       {viewing && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col animate-fade-in" onClick={() => { setViewing(null); setEditingNote(false) }}>
-          <div className="flex items-center justify-between p-4 text-white">
-            <button onClick={() => { setViewing(null); setEditingNote(false) }} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10">
-              <span className="text-xl">✕</span>
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col animate-fade-in" onClick={() => { setViewing(null); setEditingNote(false) }}>
+          <div className="flex items-center justify-between p-6 text-white">
+            <button onClick={() => { setViewing(null); setEditingNote(false) }} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+              <span className="text-2xl">✕</span>
             </button>
-            <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleDateString()}</span>
-            <button onClick={() => { handleDelete(viewing.id); setViewing(null) }} className="text-red-400 text-sm px-3 py-1">
+            <span className="text-white/70 text-sm">{new Date(viewing.createdAt).toLocaleDateString()}</span>
+            <button onClick={() => { handleDelete(viewing.id); setViewing(null) }} className="text-red-400 text-sm px-4 py-2 font-medium hover:bg-red-500/10 rounded-lg transition-colors">
               {t('delete')}
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
-            <img src={getPhotoURL(viewing)} className="max-w-full max-h-[70vh] object-contain" alt={viewing.note || ''} />
+          <div className="flex-1 flex items-center justify-center px-6" onClick={e => e.stopPropagation()}>
+            <img src={getPhotoURL(viewing)} className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl" alt={viewing.note || ''} />
           </div>
-          <div className="p-6 pb-8">
+          <div className="p-6 pb-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
             {editingNote ? (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <input type="text" value={viewNote} onChange={e => setViewNote(e.target.value)}
-                  className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:outline-none font-hand"
+                  className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] font-hand text-lg leading-relaxed"
                   autoFocus onKeyDown={e => e.key === 'Enter' && handleSaveNote()} />
-                <button onClick={handleSaveNote} className="text-[var(--color-primary-light)] font-medium px-4">{t('save')}</button>
+                <button onClick={handleSaveNote} className="px-4 py-3 rounded-xl bg-[var(--color-primary)] text-white font-semibold transition-colors">
+                  {t('save')}
+                </button>
               </div>
             ) : (
-              <button onClick={() => { setEditingNote(true); setViewNote(viewing.note) }} className="text-white/70 text-center w-full font-hand text-lg">
+              <button onClick={() => { setEditingNote(true); setViewNote(viewing.note) }} className="text-white/80 text-center w-full font-hand text-xl leading-relaxed hover:text-white transition-colors">
                 {viewing.note || t('addNote')}
               </button>
             )}
@@ -193,12 +207,16 @@ export default function Timeline() {
 
       {/* Long press delete confirm */}
       {longPressId && (
-        <div className="fixed inset-0 bg-black/60 z-40 flex items-center justify-center animate-fade-in" onClick={() => setLongPressId(null)}>
-          <div className="bg-[var(--color-bg-card)] rounded-2xl p-6 mx-8 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
-            <p className="text-[var(--color-text)] text-center font-medium">{t('deletePhoto')}</p>
+        <div className="fixed inset-0 bg-black/70 z-40 flex items-center justify-center animate-fade-in" onClick={() => setLongPressId(null)}>
+          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-8 space-y-6 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <p className="text-[var(--color-text)] text-center font-display text-xl leading-relaxed">{t('deletePhoto')}</p>
             <div className="flex gap-3">
-              <button onClick={() => setLongPressId(null)} className="flex-1 py-2.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text-light)]">{t('cancel')}</button>
-              <button onClick={() => handleDelete(longPressId)} className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-medium">{t('delete')}</button>
+              <button onClick={() => setLongPressId(null)} className="flex-1 py-3.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] font-semibold transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]">
+                {t('cancel')}
+              </button>
+              <button onClick={() => handleDelete(longPressId)} className="flex-1 py-3.5 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors">
+                {t('delete')}
+              </button>
             </div>
           </div>
         </div>
@@ -206,20 +224,20 @@ export default function Timeline() {
 
       {/* Photo grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-[var(--color-text-muted)]">
-          <div className="text-4xl animate-pulse">📸</div>
-          <p className="mt-3 text-sm">{t('loading')}</p>
+        <div className="flex flex-col items-center justify-center py-24 text-[var(--color-text-muted)]">
+          <div className="text-5xl animate-pulse">📸</div>
+          <p className="mt-3 text-sm">Loading memories...</p>
         </div>
       ) : photos.length > 0 ? (
-        <div className="space-y-10">
+        <div className="space-y-12">
           {groups.map(g => (
             <div key={g.label}>
-              <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-4 pl-1">{g.label}</h2>
-              <div className="grid grid-cols-2 gap-5">
+              <h2 className="date-label">{g.label}</h2>
+              <div className="grid grid-cols-2 gap-5 stagger-children">
                 {g.photos.map((p, i) => (
                   <div
                     key={p.id}
-                    className="cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+                    className="transition-all duration-300 hover:scale-[1.03] cursor-pointer animate-wiggle"
                     style={{ transform: `rotate(${getRotation(i)}deg)` }}
                     onClick={() => { if (!longPressId) { setViewing(p); setEditingNote(false) } }}
                     onTouchStart={() => onTouchStart(p.id)}
@@ -227,10 +245,11 @@ export default function Timeline() {
                     onTouchCancel={onTouchEnd}
                     onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}
                   >
-                    {/* Polaroid frame */}
-                    <div className="polaroid rounded-sm">
-                      <img src={p.thumbnail} className="w-full aspect-square object-cover" alt={p.note || ''} loading="lazy" />
-                      <p className="font-hand text-center text-[var(--color-text-light)] mt-2 px-1 truncate text-base">
+                    {/* Polaroid frame with washi tape */}
+                    <div className="polaroid rounded-sm relative">
+                      <div className="washi-tape absolute top-0 left-0 w-full h-full pointer-events-none z-10"></div>
+                      <img src={p.thumbnail} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" alt={p.note || ''} loading="lazy" />
+                      <p className="font-hand text-center text-[var(--color-text-light)] mt-3 px-1 truncate leading-relaxed">
                         {p.note || ' '}
                       </p>
                     </div>
@@ -241,10 +260,10 @@ export default function Timeline() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 text-[var(--color-text-muted)]">
-          <div className="text-7xl mb-4 opacity-60">📷</div>
-          <p className="text-center text-lg font-medium">{t('noPhotos')}</p>
-          <p className="text-sm mt-1">{t('noPhotosTip')}</p>
+        <div className="flex flex-col items-center justify-center py-32 text-[var(--color-text-muted)]">
+          <div className="text-7xl mb-4 opacity-40 animate-float">📷</div>
+          <p className="text-center text-xl font-display mb-2">{t('noPhotos')}</p>
+          <p className="text-center text-sm opacity-60">{t('noPhotosTip')}</p>
         </div>
       )}
     </div>

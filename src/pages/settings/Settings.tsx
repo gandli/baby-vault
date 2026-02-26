@@ -35,46 +35,52 @@ export default function Settings() {
   }
 
   return (
-    <div className="px-4 pt-6 pb-24 paper-texture">
-      <h1 className="text-2xl font-bold text-[var(--color-text)] mb-6">{t('settings')}</h1>
+    <div className="px-4 pt-8 pb-28 paper-texture">
+      <h1 className="text-2xl font-display text-[var(--color-text)] mb-8">{t('settings')}</h1>
 
       <div className="space-y-4">
-        {/* Account */}
-        <div className="card p-4">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{t('account')}</p>
-          <p className="text-[var(--color-text)]">{user?.email}</p>
+        {/* Account Card */}
+        <div className="card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-primary-wash)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8" />
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-2">{t('account')}</p>
+          <p className="text-[var(--color-text)] font-medium text-lg">{user?.email}</p>
         </div>
 
-        {/* Baby info */}
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">{t('babyInfo')}</p>
+        {/* Baby Info Card */}
+        <div className="card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-accent-wash)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8" />
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest">{t('babyInfo')}</p>
             <button
               onClick={() => { setEditing(!editing); setName(user?.babyName || ''); setBirthday(user?.babyBirthday || '') }}
-              className="text-sm text-[var(--color-primary)] font-medium"
+              className={`text-sm font-semibold transition-colors ${
+                editing 
+                  ? 'text-[var(--color-accent)] hover:text-[var(--color-accent-dark)]' 
+                  : 'text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]'
+              }`}
             >
               {editing ? t('cancel') : t('edit')}
             </button>
           </div>
           {editing ? (
-            <div className="space-y-3 mt-3">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">{t('nickname')}</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-2">{t('nickname')}</label>
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-5 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-medium transition-colors focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">{t('birthday')}</label>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-2">{t('birthday')}</label>
                 <input
                   type="date"
                   value={birthday}
                   onChange={e => setBirthday(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                  className="w-full px-5 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-medium transition-colors focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent"
                 />
               </div>
               <button onClick={handleSave} className="btn-primary w-full">
@@ -83,25 +89,28 @@ export default function Settings() {
             </div>
           ) : (
             <>
-              <p className="text-[var(--color-text)] font-medium">{user?.babyName}</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">{t('birthday')}: {user?.babyBirthday}</p>
+              <p className="text-[var(--color-text)] font-display text-2xl mb-1">{user?.babyName}</p>
+              <p className="text-sm text-[var(--color-text-light)]">
+                {t('birthday')}: {new Date(user?.babyBirthday!).toLocaleDateString()}
+              </p>
             </>
           )}
         </div>
 
-        {/* Language */}
-        <div className="card p-4">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-3">{t('language')}</p>
-          <div className="flex gap-2">
-            {(Object.entries(LANG_NAMES) as [Lang, string][]).map(([code, label]) => (
+        {/* Language Card */}
+        <div className="card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-success-wash)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8" />
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-4">{t('language')}</p>
+          <div className="flex gap-3">
+            {(Object.entries(LANG_NAMES) as [Lang, string][]).map(([code, label], index) => (
               <button
                 key={code}
                 onClick={() => handleLangChange(code)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                   currentLang === code
-                    ? 'bg-[var(--color-primary)] text-white shadow-md'
-                    : 'bg-[var(--color-bg)] text-[var(--color-text-light)] border border-[var(--color-border)]'
-                }`}
+                    ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary-wash)]'
+                    : 'bg-[var(--color-bg)] text-[var(--color-text-light)] border border-[var(--color-border)] hover:border-[var(--color-text-muted)]'
+                } ${index === 0 ? '' : ''}`}
               >
                 {label}
               </button>
@@ -109,36 +118,39 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Storage */}
-        <div className="card p-4">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{t('storage')}</p>
-          <p className="text-[var(--color-text)]">{t('localStorage')}</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">{t('localOnly')}</p>
+        {/* Storage Card */}
+        <div className="card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-linen-dark)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8 opacity-30" />
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-2">{t('storage')}</p>
+          <p className="text-[var(--color-text)]">Local storage only</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-2 opacity-70">{t('localOnly')}</p>
         </div>
 
-        {/* Export */}
+        {/* Export Button */}
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="w-full card p-4 text-left active:scale-[0.99] transition-transform disabled:opacity-50"
+          className="w-full card p-6 text-left active:scale-[0.99] transition-all duration-300 relative overflow-hidden group"
         >
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{t('dataBackup')}</p>
-          <p className="text-[var(--color-text)]">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[var(--color-accent-wash)] to-[var(--color-primary-wash)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-2">{t('dataBackup')}</p>
+          <p className="text-[var(--color-text)] font-medium text-lg mb-1">
             {exporting ? t('exporting') : t('exportJSON')}
           </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">{t('exportDesc')}</p>
+          <p className="text-xs text-[var(--color-text-light)]">{t('exportDesc')}</p>
         </button>
 
-        {/* Version */}
-        <div className="card p-4">
-          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{t('version')}</p>
-          <p className="text-[var(--color-text)]">BabyVault MVP v0.1.0</p>
+        {/* Version Info */}
+        <div className="card p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--color-accent-wash)] rounded-bl-3xl rounded-tr-sm -mr-8 -mt-8" />
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-2">{t('version')}</p>
+          <p className="text-[var(--color-text)] font-display text-xl">BabyVault MVP v0.1.0</p>
         </div>
 
-        {/* Logout */}
+        {/* Logout Button */}
         <button
           onClick={logout}
-          className="w-full py-3.5 rounded-2xl bg-red-50 text-red-500 font-medium active:scale-[0.99] transition-transform dark:bg-red-900/20"
+          className="w-full py-4.5 rounded-2xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold active:scale-[0.99] transition-all duration-300 dark:bg-red-900/20 dark:hover:bg-red-900/30"
         >
           {t('logout')}
         </button>

@@ -48,8 +48,15 @@ export default function Milestones() {
   const [newEmoji, setNewEmoji] = useState('⭐')
   const [datePickId, setDatePickId] = useState<string | null>(null)
   const [pickDate, setPickDate] = useState('')
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
 
   useEffect(() => { saveMilestones(milestones) }, [milestones])
+
+  useEffect(() => {
+    if (isFirstLoad) {
+      setIsFirstLoad(false)
+    }
+  }, [isFirstLoad])
 
   const toggle = (id: string) => {
     const m = milestones.find(m => m.id === id)
@@ -86,19 +93,22 @@ export default function Milestones() {
   const progress = milestones.length ? (done.length / milestones.length) * 100 : 0
 
   return (
-    <div className="px-4 pt-6 pb-24 paper-texture">
+    <div className="px-4 pt-8 pb-28 paper-texture">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">{t('milestones')}</h1>
-        <div className="sticker">
+      <div className="flex items-center justify-between mb-8 relative">
+        <h1 className="text-2xl font-display text-[var(--color-text)]">{t('milestones')}</h1>
+        <div className="sticker animate-stamp">
           {done.length}/{milestones.length}
         </div>
       </div>
 
+      {/* Decorative divider */}
+      <div className="divider-dots mb-6" />
+
       {/* Progress bar - wavy style */}
-      <div className="relative h-3 bg-[var(--color-border)] rounded-full mb-8 overflow-hidden">
+      <div className="relative h-4 bg-[var(--color-linen)] rounded-full mb-8 overflow-hidden shadow-inner">
         <div 
-          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out shadow-sm"
           style={{ 
             width: `${progress}%`,
             background: 'linear-gradient(90deg, var(--color-success), var(--color-accent))'
@@ -106,11 +116,11 @@ export default function Milestones() {
         />
         {progress > 0 && (
           <div 
-            className="absolute inset-y-0 left-0 rounded-full opacity-30"
+            className="absolute inset-y-0 left-0 rounded-full opacity-40"
             style={{ 
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
-              animation: 'shimmer 2s infinite',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
+              animation: 'shimmer 2.5s infinite',
               backgroundSize: '200% 100%'
             }}
           />
@@ -118,17 +128,17 @@ export default function Milestones() {
       </div>
 
       {/* Todo milestones */}
-      <div className="space-y-3 mb-6">
-        {todo.map(m => (
+      <div className="space-y-3 stagger-children">
+        {todo.map((m) => (
           <button
             key={m.id}
             onClick={() => toggle(m.id)}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] active:scale-[0.98] transition-all duration-200 text-left shadow-sm hover:shadow-md"
+            className="w-full flex items-center gap-4 p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-primary)] active:scale-[0.98] transition-all duration-300 text-left shadow-sm hover:shadow-md group"
           >
-            <span className="text-3xl">{m.emoji}</span>
-            <span className="flex-1 text-[var(--color-text)] font-medium">{getMilestoneName(m)}</span>
-            <span className="w-7 h-7 rounded-full border-2 border-[var(--color-border)] flex items-center justify-center text-transparent">
-              ○
+            <span className="text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">{m.emoji}</span>
+            <span className="flex-1 text-[var(--color-text)] font-medium transition-colors group-hover:text-[var(--color-primary)]">{getMilestoneName(m)}</span>
+            <span className="w-8 h-8 rounded-xl border-2 border-[var(--color-border)] flex items-center justify-center text-transparent group-hover:border-[var(--color-primary)] group-hover:bg-[var(--color-primary-wash)] transition-all duration-300">
+              ✓
             </span>
           </button>
         ))}
@@ -136,30 +146,30 @@ export default function Milestones() {
 
       {/* Add custom */}
       {adding ? (
-        <div className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 mb-6 animate-scale-in">
+        <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 mb-8 animate-scale-in shadow-sm">
           <div className="flex gap-3">
             <input
               type="text"
               value={newEmoji}
               onChange={e => setNewEmoji(e.target.value)}
-              className="w-14 px-2 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-center text-2xl"
+              className="w-16 px-3 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-center text-3xl transition-colors focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               maxLength={2}
+              autoFocus
             />
             <input
               type="text"
               placeholder={t('milestoneName')}
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
-              autoFocus
+              className="flex-1 px-5 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] transition-colors focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent font-medium"
               onKeyDown={e => e.key === 'Enter' && addCustom()}
             />
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setAdding(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] text-sm">
+            <button onClick={() => setAdding(false)} className="flex-1 py-3.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] font-semibold transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]">
               {t('cancel')}
             </button>
-            <button onClick={addCustom} className="flex-1 py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-sm font-medium">
+            <button onClick={addCustom} className="flex-1 py-3.5 rounded-xl bg-[var(--color-primary)] text-white font-semibold hover:bg-[var(--color-primary-dark)] transition-colors">
               {t('add')}
             </button>
           </div>
@@ -167,7 +177,7 @@ export default function Milestones() {
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="w-full p-4 rounded-2xl border-2 border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] text-sm active:scale-[0.98] transition-all duration-200 mb-6 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+          className="w-full p-5 rounded-2xl border-2 border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold transition-all duration-300 mb-8 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-wash)]/50"
         >
           {t('addCustom')}
         </button>
@@ -176,25 +186,27 @@ export default function Milestones() {
       {/* Completed milestones */}
       {done.length > 0 && (
         <>
-          <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-4 pl-1">{t('completed')}</h2>
+          <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-widest mt-8 mb-4 pl-1">{t('completed')}</h2>
           <div className="space-y-3">
             {done.map(m => (
               <div
                 key={m.id}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--color-success-light)]/30 border border-[var(--color-success)]/20"
+                className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--color-success-wash)]/50 border border-[var(--color-success)]/30 hover:border-[var(--color-success)] transition-all duration-300"
               >
-                <span className="text-3xl">{m.emoji}</span>
+                <span className="text-3xl animate-float">{m.emoji}</span>
                 <div className="flex-1">
-                  <span className="text-[var(--color-text)] font-medium">{getMilestoneName(m)}</span>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                    {new Date(m.doneAt!).toLocaleDateString()}
+                  <span className="text-[var(--color-text)] font-medium text-lg">{getMilestoneName(m)}</span>
+                  <p className="text-xs text-[var(--color-text-light)] mt-1">
+                    📅 {new Date(m.doneAt!).toLocaleDateString()}
                   </p>
                 </div>
-                <button onClick={() => toggle(m.id)} className="w-7 h-7 rounded-full bg-[var(--color-success)] text-white flex items-center justify-center">
+                <button onClick={() => toggle(m.id)} className="w-9 h-9 rounded-xl bg-[var(--color-success)] text-white flex items-center justify-center text-lg shadow-sm hover:bg-[var(--color-success-light)] transition-colors">
                   ✓
                 </button>
                 {!m.id.startsWith('preset-') && (
-                  <button onClick={() => remove(m.id)} className="text-red-400 text-xs px-2">{t('delete')}</button>
+                  <button onClick={() => remove(m.id)} className="text-red-500/60 hover:text-red-600 text-xs font-semibold px-3 py-1.5 transition-colors">
+                    ✕
+                  </button>
                 )}
               </div>
             ))}
@@ -204,26 +216,26 @@ export default function Milestones() {
 
       {/* Date picker modal */}
       {datePickId && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-fade-in" onClick={() => setDatePickId(null)}>
-          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-8 space-y-4 animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in p-4" onClick={() => setDatePickId(null)}>
+          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-4 space-y-6 animate-scale-in max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="text-center">
-              <span className="text-4xl">{milestones.find(m => m.id === datePickId)?.emoji}</span>
-              <p className="text-[var(--color-text)] font-semibold mt-2">
+              <span className="text-5xl animate-float">{milestones.find(m => m.id === datePickId)?.emoji}</span>
+              <h2 className="text-[var(--color-text)] font-display text-2xl mt-4 mb-1">
                 🎉 {getMilestoneName(milestones.find(m => m.id === datePickId)!)}
-              </p>
+              </h2>
+              <p className="text-sm text-[var(--color-text-light)]">{t('selectDate')}</p>
             </div>
-            <p className="text-sm text-[var(--color-text-muted)] text-center">{t('selectDate')}</p>
             <input
               type="date"
               value={pickDate}
               onChange={e => setPickDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+              className="w-full px-5 py-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] text-lg transition-colors focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             />
             <div className="flex gap-3">
-              <button onClick={() => setDatePickId(null)} className="flex-1 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)]">
+              <button onClick={() => setDatePickId(null)} className="flex-1 py-4 rounded-xl border border-[var(--color-border)] text-[var(--color-text-light)] font-semibold transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]">
                 {t('cancel')}
               </button>
-              <button onClick={confirmDate} className="flex-1 py-3 rounded-xl bg-[var(--color-success)] text-white font-medium">
+              <button onClick={confirmDate} className="flex-1 py-4 rounded-xl bg-[var(--color-success)] text-white font-semibold hover:bg-[var(--color-success-light)] transition-colors">
                 {t('confirm')}
               </button>
             </div>
@@ -231,9 +243,10 @@ export default function Milestones() {
         </div>
       )}
 
+      {/* Cheer message */}
       {user?.babyName && (
-        <p className="text-center text-sm text-[var(--color-text-muted)] mt-8">
-          {user.babyName}{t('cheerUp')}
+        <p className="text-center text-sm text-[var(--color-text-muted)] mt-10 mb-8">
+          Keep growing, {user.babyName}! 🌟
         </p>
       )}
     </div>
