@@ -10,7 +10,7 @@ A PWA for parents to capture and organize their baby's growth moments — photos
 
 - 📸 **Photo & Video Capture** — Snap or upload, auto-organized by month age
 - 🔐 **End-to-End Encryption** — Client-side AES-256-GCM, zero-knowledge server
-- 👨‍👩‍👧 **Family Sharing** — Invite grandparents via QR code, secure key exchange
+- 👨👩👧 **Family Sharing** — Invite grandparents via QR code, secure key exchange
 - 🏷️ **Milestones** — First smile, first steps — tag and celebrate every moment
 - 📅 **Month-Age Timeline** — Everything organized around "how old is baby now"
 - 📱 **PWA** — Install on any device, works offline
@@ -40,10 +40,6 @@ A PWA for parents to capture and organize their baby's growth moments — photos
 ## Documentation
 
 - [Product Requirements Document (PRD)](./PRD.md)
-
-## License
-
-MIT
 
 ---
 
