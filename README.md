@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# 👶 BabyVault
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Secure, private baby growth journal. End-to-end encrypted, family sharing, zero privacy compromise.**
 
-Currently, two official plugins are available:
+## What is BabyVault?
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+A PWA for parents to capture and organize their baby's growth moments — photos, videos, and milestones — with end-to-end encryption. The server never sees your baby's photos.
 
-## React Compiler
+## Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 📸 **Photo & Video Capture** — Snap or upload, auto-organized by month age
+- 🔐 **End-to-End Encryption** — Client-side AES-256-GCM, zero-knowledge server
+- 👨‍👩‍👧 **Family Sharing** — Invite grandparents via QR code, secure key exchange
+- 🏷️ **Milestones** — First smile, first steps — tag and celebrate every moment
+- 📅 **Month-Age Timeline** — Everything organized around "how old is baby now"
+- 📱 **PWA** — Install on any device, works offline
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 + TypeScript + Vite 7 + Tailwind CSS 4 |
+| Backend | Cloudflare Workers + Hono |
+| Database | Cloudflare D1 (SQLite) |
+| Storage | Cloudflare R2 (zero egress fees) |
+| Encryption | Web Crypto API (client-side E2EE) |
+| PWA | vite-plugin-pwa (Workbox) |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Why BabyVault?
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| | BabyVault | Qinbaobao | Google Photos |
+|--|-----------|-----------|---------------|
+| E2E Encryption | ✅ | ❌ | ❌ |
+| Month-Age Timeline | ✅ | ✅ | ❌ |
+| Family Sharing | ✅ | ✅ | ✅ |
+| Ad-Free | ✅ | ❌ | ✅ |
+| Data Export | ✅ | ❌ | ✅ |
+| Open Source | ✅ | ❌ | ❌ |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Documentation
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- [Product Requirements Document (PRD)](./PRD.md)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## License
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+MIT
+
+---
+
+Made with 🦞 by BabyVault Team
