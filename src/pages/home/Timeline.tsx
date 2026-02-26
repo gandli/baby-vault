@@ -35,7 +35,6 @@ function groupByDate(photos: PhotoRecord[]): { label: string; photos: PhotoRecor
 
 // Determine rotation based on index to create natural scatter effect
 function getRotation(index: number): number {
-  // More dramatic 3D rotation range: -5deg to +5deg
   const sequence = [2.5, -3.2, 1.8, -1.5, 2.2, -2.8, 1.1, -3.5]
   return sequence[index % sequence.length]
 }
@@ -44,7 +43,6 @@ export default function Timeline() {
   const { user } = useAuth()
   const monthAge = user?.babyBirthday ? getMonthAge(user.babyBirthday) : 0
   const dayAge = user?.babyBirthday ? getDayAge(user.babyBirthday) : 0
-  const fileRef = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<PhotoRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showNote, setShowNote] = useState(false)
@@ -57,8 +55,6 @@ export default function Timeline() {
   const [longPressId, setLongPressId] = useState<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // No state needed - scores are stored in PhotoRecord from database
-
   useEffect(() => {
     getPhotos().then(p => { 
       setPhotos(p) 
@@ -66,14 +62,16 @@ export default function Timeline() {
     })
   }, [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPendingFile(file)
-    setShowNote(true)
-    setNote('')
-    e.target.value = ''
-  }
+  // Listen for addPhoto event from Layout's dock bar
+  useEffect(() => {
+    const handleAddPhoto = (e: CustomEvent<File>) => {
+      setPendingFile(e.detail)
+      setShowNote(true)
+      setNote('')
+    }
+    window.addEventListener('addPhoto', handleAddPhoto as EventListener)
+    return () => window.removeEventListener('addPhoto', handleAddPhoto as EventListener)
+  }, [])
 
   const handleSave = async () => {
     if (!pendingFile) return
@@ -114,7 +112,7 @@ export default function Timeline() {
   const groups = groupByDate(photos)
 
   return (
-    <div className="px-4 pt-8 pb-28 paper-texture">
+    <div className="px-4 pt-6 pb-32 paper-texture">
       {/* Header - Scrapbook style */}
       <div className="flex items-center justify-between mb-10 relative">
         <div>
@@ -125,14 +123,6 @@ export default function Timeline() {
             {monthAge}{t('months')} · {dayAge} days
           </p>
         </div>
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="w-16 h-16 rounded-full bg-[var(--color-primary)] text-white text-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all duration-200 relative group"
-          style={{ boxShadow: '0 8px 24px rgba(196, 112, 75, 0.35)' }}
-        >
-          <span className="relative -top-0.5 text-2xl group-hover:translate-y-[-2px] transition-transform duration-200">+</span>
-        </button>
-        <input ref={fileRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleFileChange} />
       </div>
 
       {/* Upload modal */}
@@ -234,7 +224,6 @@ export default function Timeline() {
               <h2 className="date-label">{g.label}</h2>
               <div className="grid grid-cols-2 gap-5 stagger-children">
                 {g.photos.map((p, i) => {
-                  // Use stored score if available, otherwise derive from label
                   const { score = 80, label } = p
                   const displayLabel = label || getScoreLabel(score)
                   return (
@@ -248,11 +237,9 @@ export default function Timeline() {
                       onTouchCancel={onTouchEnd}
                       onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}
                     >
-                      {/* Polaroid frame with washi tape */}
                       <div className="polaroid rounded-sm relative">
                         <div className="washi-tape absolute top-0 left-0 w-full h-full pointer-events-none z-10"></div>
                         <img src={p.thumbnail} className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105" alt={p.note || ''} loading="lazy" />
-                        {/* Photo rating */}
                         {displayLabel && (
                           <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                             <span className="bg-white/90 dark:bg-black/80 px-2 py-0.5 rounded-lg text-xs font-display font-bold text-[var(--color-primary)] shadow-sm">
@@ -263,7 +250,6 @@ export default function Timeline() {
                         <p className="font-hand text-center text-[var(--color-text-light)] mt-3 px-1 truncate leading-relaxed">
                           {p.note || ' '}
                         </p>
-                        {/* Rating label */}
                         {displayLabel && (
                           <p className="font-hand text-center text-[var(--color-primary)] mt-1 px-1 text-xs animate-wiggle">
                             {displayLabel}
