@@ -1,6 +1,7 @@
 import { useAuth } from '../../lib/auth-context'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL, updatePhotoNote } from '../../lib/photo-store'
+import { t, getLang } from '../../lib/i18n'
 
 function getMonthAge(birthday: string): number {
   const birth = new Date(birthday)
@@ -9,23 +10,23 @@ function getMonthAge(birthday: string): number {
 }
 
 function getDayAge(birthday: string): number {
-  const birth = new Date(birthday)
-  const now = new Date()
-  return Math.floor((now.getTime() - birth.getTime()) / 86400000)
+  return Math.floor((Date.now() - new Date(birthday).getTime()) / 86400000)
 }
 
 function groupByDate(photos: PhotoRecord[]): { label: string; photos: PhotoRecord[] }[] {
   const now = new Date()
-  const today = now.toDateString()
-  const yesterday = new Date(now.getTime() - 86400000).toDateString()
+  const todayStr = now.toDateString()
+  const yesterdayStr = new Date(now.getTime() - 86400000).toDateString()
+  const lang = getLang()
 
   const groups: Map<string, PhotoRecord[]> = new Map()
   for (const p of photos) {
-    const d = new Date(p.createdAt).toDateString()
+    const d = new Date(p.createdAt)
+    const ds = d.toDateString()
     let label: string
-    if (d === today) label = '今天'
-    else if (d === yesterday) label = '昨天'
-    else label = new Date(p.createdAt).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })
+    if (ds === todayStr) label = t('today')
+    else if (ds === yesterdayStr) label = t('yesterday')
+    else label = d.toLocaleDateString(lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US', { month: 'long', day: 'numeric' })
     if (!groups.has(label)) groups.set(label, [])
     groups.get(label)!.push(p)
   }
@@ -90,7 +91,6 @@ export default function Timeline() {
     setEditingNote(false)
   }
 
-  // Long press for mobile delete
   const onTouchStart = useCallback((id: string) => {
     longPressTimer.current = setTimeout(() => setLongPressId(id), 500)
   }, [])
@@ -106,9 +106,9 @@ export default function Timeline() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-            {user?.babyName}的时间线
+            {user?.babyName}{t('timeline')}
           </h1>
-          <p className="text-sm text-gray-400">{monthAge} 个月 · 第 {dayAge} 天</p>
+          <p className="text-sm text-gray-400">{monthAge}{t('months')} · {t('day', { n: dayAge })}</p>
         </div>
         <button
           onClick={() => fileRef.current?.click()}
@@ -116,118 +116,69 @@ export default function Timeline() {
         >
           +
         </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,video/*"
-          capture="environment"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+        <input ref={fileRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={handleFileChange} />
       </div>
 
-      {/* Upload modal */}
       {showNote && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
           <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-t-2xl p-6 space-y-4 animate-slide-up">
-            {pendingFile && (
-              <img
-                src={URL.createObjectURL(pendingFile)}
-                className="w-full h-48 object-cover rounded-xl"
-                alt="preview"
-              />
-            )}
+            {pendingFile && <img src={URL.createObjectURL(pendingFile)} className="w-full h-48 object-cover rounded-xl" alt="preview" />}
             <input
-              type="text"
-              placeholder="记录这个瞬间…（可选）"
-              value={note}
-              onChange={e => setNote(e.target.value)}
+              type="text" placeholder={t('recordMoment')} value={note} onChange={e => setNote(e.target.value)}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6CB4EE]"
-              autoFocus
-              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              autoFocus onKeyDown={e => e.key === 'Enter' && handleSave()}
             />
             <div className="flex gap-3">
-              <button
-                onClick={() => { setShowNote(false); setPendingFile(null) }}
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-500"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-3 rounded-xl bg-[#6CB4EE] text-white font-medium disabled:opacity-50"
-              >
-                {saving ? '保存中…' : '保存 📸'}
-              </button>
+              <button onClick={() => { setShowNote(false); setPendingFile(null) }} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-500">{t('cancel')}</button>
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-xl bg-[#6CB4EE] text-white font-medium disabled:opacity-50">{saving ? t('saving') : t('save')}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Fullscreen viewer */}
       {viewing && (
         <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
           <div className="flex items-center justify-between p-4">
             <button onClick={() => { setViewing(null); setEditingNote(false) }} className="text-white text-lg">✕</button>
-            <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleString('zh-CN')}</span>
-            <button
-              onClick={() => { handleDelete(viewing.id); setViewing(null) }}
-              className="text-red-400 text-sm"
-            >
-              删除
-            </button>
+            <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleString()}</span>
+            <button onClick={() => { handleDelete(viewing.id); setViewing(null) }} className="text-red-400 text-sm">{t('delete')}</button>
           </div>
           <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
-            <img
-              src={getPhotoURL(viewing)}
-              className="max-w-full max-h-[65vh] object-contain rounded-xl"
-              alt={viewing.note || '照片'}
-            />
+            <img src={getPhotoURL(viewing)} className="max-w-full max-h-[65vh] object-contain rounded-xl" alt={viewing.note || ''} />
           </div>
           <div className="px-6 py-4">
             {editingNote ? (
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={viewNote}
-                  onChange={e => setViewNote(e.target.value)}
+                <input type="text" value={viewNote} onChange={e => setViewNote(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:outline-none"
-                  autoFocus
-                  onKeyDown={e => e.key === 'Enter' && handleSaveNote()}
-                />
-                <button onClick={handleSaveNote} className="text-[#6CB4EE] text-sm px-3">保存</button>
+                  autoFocus onKeyDown={e => e.key === 'Enter' && handleSaveNote()} />
+                <button onClick={handleSaveNote} className="text-[#6CB4EE] text-sm px-3">{t('save')}</button>
               </div>
             ) : (
-              <button
-                onClick={() => { setEditingNote(true); setViewNote(viewing.note) }}
-                className="text-white/80 text-sm text-center w-full"
-              >
-                {viewing.note || '点击添加备注…'}
+              <button onClick={() => { setEditingNote(true); setViewNote(viewing.note) }} className="text-white/80 text-sm text-center w-full">
+                {viewing.note || t('addNote')}
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Long press delete confirm */}
       {longPressId && (
         <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" onClick={() => setLongPressId(null)}>
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-8 space-y-4" onClick={e => e.stopPropagation()}>
-            <p className="text-gray-700 dark:text-gray-200 text-center">删除这张照片？</p>
+            <p className="text-gray-700 dark:text-gray-200 text-center">{t('deletePhoto')}</p>
             <div className="flex gap-3">
-              <button onClick={() => setLongPressId(null)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">取消</button>
-              <button onClick={() => handleDelete(longPressId)} className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm">删除</button>
+              <button onClick={() => setLongPressId(null)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-sm">{t('cancel')}</button>
+              <button onClick={() => handleDelete(longPressId)} className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm">{t('delete')}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Photo grid grouped by date */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <div className="text-3xl animate-pulse">⏳</div>
-          <p className="mt-2 text-sm">加载中…</p>
+          <p className="mt-2 text-sm">{t('loading')}</p>
         </div>
       ) : photos.length > 0 ? (
         <div className="space-y-6">
@@ -236,21 +187,11 @@ export default function Timeline() {
               <h2 className="text-sm font-medium text-gray-400 mb-3">{g.label}</h2>
               <div className="grid grid-cols-2 gap-3">
                 {g.photos.map(p => (
-                  <div
-                    key={p.id}
-                    className="relative cursor-pointer active:scale-[0.97] transition-transform"
+                  <div key={p.id} className="relative cursor-pointer active:scale-[0.97] transition-transform"
                     onClick={() => { if (!longPressId) { setViewing(p); setEditingNote(false) } }}
-                    onTouchStart={() => onTouchStart(p.id)}
-                    onTouchEnd={onTouchEnd}
-                    onTouchCancel={onTouchEnd}
-                    onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}
-                  >
-                    <img
-                      src={p.thumbnail}
-                      className="w-full aspect-square object-cover rounded-xl"
-                      alt={p.note || '照片'}
-                      loading="lazy"
-                    />
+                    onTouchStart={() => onTouchStart(p.id)} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
+                    onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}>
+                    <img src={p.thumbnail} className="w-full aspect-square object-cover rounded-xl" alt={p.note || ''} loading="lazy" />
                     {p.note && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-xl">
                         <p className="text-white text-xs truncate">{p.note}</p>
@@ -265,10 +206,7 @@ export default function Timeline() {
       ) : (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <div className="text-5xl mb-4">📷</div>
-          <p className="text-center">
-            还没有照片<br />
-            <span className="text-sm">点击 + 记录第一个瞬间</span>
-          </p>
+          <p className="text-center">{t('noPhotos')}<br /><span className="text-sm">{t('noPhotosTip')}</span></p>
         </div>
       )}
     </div>

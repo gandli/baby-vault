@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth-context'
+import { t } from '../../lib/i18n'
 
 export default function Setup() {
   const { user, updateUser } = useAuth()
@@ -28,15 +29,15 @@ export default function Setup() {
     <div className="min-h-dvh flex flex-col items-center justify-center px-6">
       <div className="text-center mb-8">
         <div className="text-5xl mb-3">🍼</div>
-        <h1 className="text-xl font-bold text-gray-800 dark:text-white">创建宝宝档案</h1>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white">{t('createProfile')}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <div>
-          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">宝宝昵称</label>
+          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('babyNickname')}</label>
           <input
             type="text"
-            placeholder="小名或昵称"
+            placeholder={t('nicknamePlaceholder')}
             value={name}
             onChange={e => setName(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6CB4EE]"
@@ -45,7 +46,7 @@ export default function Setup() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">出生日期</label>
+          <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">{t('birthday')}</label>
           <input
             type="date"
             value={birthday}
@@ -58,7 +59,7 @@ export default function Setup() {
           type="submit"
           className="w-full py-3 rounded-xl bg-[#6CB4EE] text-white font-medium hover:bg-[#5AA3DD] transition-colors active:scale-[0.98]"
         >
-          创建 🎉
+          {t('create')}
         </button>
       </form>
     </div>

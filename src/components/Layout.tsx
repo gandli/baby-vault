@@ -1,9 +1,10 @@
 import { Outlet, NavLink } from 'react-router-dom'
+import { t } from '../lib/i18n'
 
 const navItems = [
-  { to: '/', icon: '📸', label: '时间线' },
-  { to: '/milestones', icon: '🏆', label: '里程碑' },
-  { to: '/settings', icon: '⚙️', label: '设置' },
+  { to: '/', icon: '📸', key: 'navTimeline' as const },
+  { to: '/milestones', icon: '🏆', key: 'navMilestones' as const },
+  { to: '/settings', icon: '⚙️', key: 'navSettings' as const },
 ]
 
 export default function Layout() {
@@ -24,7 +25,7 @@ export default function Layout() {
             }
           >
             <span className="text-xl">{item.icon}</span>
-            <span>{item.label}</span>
+            <span>{t(item.key)}</span>
           </NavLink>
         ))}
       </nav>
