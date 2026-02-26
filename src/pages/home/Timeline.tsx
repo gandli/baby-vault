@@ -28,6 +28,7 @@ export default function Timeline() {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [viewing, setViewing] = useState<PhotoRecord | null>(null)
 
   useEffect(() => {
     getPhotos().then(setPhotos)
@@ -124,11 +125,38 @@ export default function Timeline() {
         </div>
       )}
 
+      {/* Fullscreen viewer */}
+      {viewing && (
+        <div className="fixed inset-0 bg-black z-50 flex flex-col" onClick={() => setViewing(null)}>
+          <div className="flex items-center justify-between p-4">
+            <button onClick={() => setViewing(null)} className="text-white text-lg">✕</button>
+            <span className="text-white/60 text-sm">{new Date(viewing.createdAt).toLocaleString('zh-CN')}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(viewing.id); setViewing(null) }}
+              className="text-red-400 text-sm"
+            >
+              删除
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
+            <img
+              src={viewing.thumbnail}
+              className="max-w-full max-h-[70vh] object-contain rounded-xl"
+              alt={viewing.note || '照片'}
+            />
+          </div>
+          {viewing.note && (
+            <p className="text-white text-center px-6 py-4 text-sm">{viewing.note}</p>
+          )}
+          <div className="h-8" />
+        </div>
+      )}
+
       {/* Photo grid */}
       {photos.length > 0 ? (
         <div className="grid grid-cols-2 gap-3">
           {photos.map(p => (
-            <div key={p.id} className="relative group">
+            <div key={p.id} className="relative group cursor-pointer" onClick={() => setViewing(p)}>
               <img
                 src={p.thumbnail}
                 className="w-full aspect-square object-cover rounded-xl"
@@ -139,14 +167,6 @@ export default function Timeline() {
                   <p className="text-white text-xs truncate">{p.note}</p>
                 </div>
               )}
-              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="w-6 h-6 rounded-full bg-red-500/80 text-white text-xs flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
               <p className="text-xs text-gray-400 mt-1">{timeAgo(p.createdAt)}</p>
             </div>
           ))}
