@@ -47,7 +47,7 @@ export default function Timeline() {
   const [editingNote, setEditingNote] = useState(false)
   const [viewNote, setViewNote] = useState('')
   const [longPressId, setLongPressId] = useState<string | null>(null)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>()
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getPhotos().then(p => { setPhotos(p); setLoading(false) })
