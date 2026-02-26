@@ -1,10 +1,6 @@
 import '@testing-library/jest-dom'
 import { beforeAll, afterAll, beforeEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
-import * as matchers from '@testing-library/jest-dom/matchers'
-import { extendExpect } from '@testing-library/jest-dom'
-
-expect.extend(matchers)
 
 // Mock localStorage
 const localStorageMock = (function() {
@@ -39,22 +35,22 @@ const mockIDBFactory = {
       }),
     },
   }),
+  deleteDatabase: () => ({
+    onupgradeneeded: null,
+    onsuccess: null,
+    onerror: null,
+  }),
 }
 
 Object.defineProperty(window, 'indexedDB', { value: mockIDBFactory })
 
 // Mock navigator.language
-const originalLanguage = Object.getOwnPropertyDescriptor(navigator, 'language')
-
 beforeAll(() => {
-  // Set default language to Chinese for tests
   Object.defineProperty(navigator, 'language', { value: 'zh-CN' })
 })
 
 afterAll(() => {
-  if (originalLanguage) {
-    Object.defineProperty(navigator, 'language', originalLanguage)
-  }
+  Object.defineProperty(navigator, 'language', { value: 'en-US' })
 })
 
 beforeEach(() => {
