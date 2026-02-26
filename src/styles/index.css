@@ -32,3 +32,17 @@ body {
 }
 .animate-slide-up { animation: slide-up 0.25s ease-out; }
 .animate-fade-in { animation: fade-in 0.2s ease-out; }
+
+/* Polaroid photo style */
+.font-hand {
+  font-family: 'Caveat', 'Ma Shan Zheng', cursive;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+/* Dark mode polaroid */
+@media (prefers-color-scheme: dark) {
+  .grid > div > .bg-white {
+    background: linear-gradient(145deg, #2a2a3e, #1e1e2e);
+  }
+}

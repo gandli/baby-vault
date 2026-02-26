@@ -181,22 +181,35 @@ export default function Timeline() {
           <p className="mt-2 text-sm">{t('loading')}</p>
         </div>
       ) : photos.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {groups.map(g => (
             <div key={g.label}>
-              <h2 className="text-sm font-medium text-gray-400 mb-3">{g.label}</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {g.photos.map(p => (
-                  <div key={p.id} className="relative cursor-pointer active:scale-[0.97] transition-transform"
+              <h2 className="text-sm font-medium text-gray-400 mb-4 pl-1">{g.label}</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {g.photos.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className="cursor-pointer transition-all duration-200 active:scale-[0.97]"
+                    style={{ transform: `rotate(${(i % 2 === 0 ? -1 : 1) * (1 + Math.random() * 1.5)}deg)` }}
                     onClick={() => { if (!longPressId) { setViewing(p); setEditingNote(false) } }}
-                    onTouchStart={() => onTouchStart(p.id)} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}
-                    onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}>
-                    <img src={p.thumbnail} className="w-full aspect-square object-cover rounded-xl" alt={p.note || ''} loading="lazy" />
-                    {p.note && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-xl">
-                        <p className="text-white text-xs truncate">{p.note}</p>
-                      </div>
-                    )}
+                    onTouchStart={() => onTouchStart(p.id)}
+                    onTouchEnd={onTouchEnd}
+                    onTouchCancel={onTouchEnd}
+                    onContextMenu={e => { e.preventDefault(); setLongPressId(p.id) }}
+                  >
+                    {/* Polaroid frame */}
+                    <div className="bg-white p-2 pb-4 rounded-sm shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 transition-shadow">
+                      <img
+                        src={p.thumbnail}
+                        className="w-full aspect-square object-cover"
+                        alt={p.note || ''}
+                        loading="lazy"
+                      />
+                      {/* Handwritten note area */}
+                      <p className="mt-2 text-center text-xs text-gray-500 font-hand truncate px-1">
+                        {p.note || ' '}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
