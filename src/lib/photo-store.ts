@@ -4,10 +4,14 @@ const STORE_NAME = 'photos'
 
 export interface PhotoRecord {
   id: string
-  blob: Blob
-  thumbnail: string // base64 data URL
+  blob: Blob        // original full-res image
+  thumbnail: string // base64 data URL (300px for grid)
   note: string
   createdAt: string
+}
+
+export function getPhotoURL(record: PhotoRecord): string {
+  return URL.createObjectURL(record.blob)
 }
 
 function openDB(): Promise<IDBDatabase> {

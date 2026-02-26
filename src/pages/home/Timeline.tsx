@@ -1,6 +1,6 @@
 import { useAuth } from '../../lib/auth-context'
 import { useEffect, useRef, useState } from 'react'
-import { type PhotoRecord, getPhotos, savePhoto, deletePhoto } from '../../lib/photo-store'
+import { type PhotoRecord, getPhotos, savePhoto, deletePhoto, getPhotoURL } from '../../lib/photo-store'
 
 function getMonthAge(birthday: string): number {
   const birth = new Date(birthday)
@@ -140,7 +140,7 @@ export default function Timeline() {
           </div>
           <div className="flex-1 flex items-center justify-center px-4" onClick={e => e.stopPropagation()}>
             <img
-              src={viewing.thumbnail}
+              src={getPhotoURL(viewing)}
               className="max-w-full max-h-[70vh] object-contain rounded-xl"
               alt={viewing.note || '照片'}
             />
