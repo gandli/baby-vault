@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { t } from '../../lib/i18n'
 
@@ -48,15 +48,8 @@ export default function Milestones() {
   const [newEmoji, setNewEmoji] = useState('⭐')
   const [datePickId, setDatePickId] = useState<string | null>(null)
   const [pickDate, setPickDate] = useState('')
-  const [isFirstLoad, setIsFirstLoad] = useState(true)
 
   useEffect(() => { saveMilestones(milestones) }, [milestones])
-
-  useEffect(() => {
-    if (isFirstLoad) {
-      setIsFirstLoad(false)
-    }
-  }, [isFirstLoad])
 
   const toggle = (id: string) => {
     const m = milestones.find(m => m.id === id)
@@ -88,9 +81,10 @@ export default function Milestones() {
     setMilestones(prev => prev.filter(m => m.id !== id))
   }
 
-  const done = milestones.filter(m => m.doneAt)
-  const todo = milestones.filter(m => !m.doneAt)
-  const progress = milestones.length ? (done.length / milestones.length) * 100 : 0
+  // Memoize to prevent unnecessary re-renders
+  const done = useMemo(() => milestones.filter(m => m.doneAt), [milestones])
+  const todo = useMemo(() => milestones.filter(m => !m.doneAt), [milestones])
+  const progress = useMemo(() => milestones.length ? (done.length / milestones.length) * 100 : 0, [milestones.length, done.length])
 
   return (
     <div className="px-4 pt-8 pb-28 paper-texture">

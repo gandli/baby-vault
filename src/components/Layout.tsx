@@ -34,13 +34,14 @@ export default function Layout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-2.5 transition-all duration-200 ${
+                className={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-2.5 ${
                   isActive 
                     ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]' 
-                    : 'text-[var(--color-text-muted)] active:scale-90'
+                    : 'text-[var(--color-text-muted)]'
                 }`}
+                style={{ transition: 'background-color 150ms ease, color 150ms ease' }}
               >
-                <span className={`text-[22px] transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                <span className="text-[22px]">
                   {item.icon}
                 </span>
                 <span className="text-[10px] font-bold leading-none">
@@ -54,32 +55,30 @@ export default function Layout() {
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-2.5 transition-all duration-200 ${
+              `flex flex-1 flex-col items-center justify-center gap-1 rounded-full py-2.5 ${
                 isActive 
                   ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]' 
-                  : 'text-[var(--color-text-muted)] active:scale-90'
+                  : 'text-[var(--color-text-muted)]'
               }`
             }
+            style={{ transition: 'background-color 150ms ease, color 150ms ease' }}
           >
-            {({ isActive }) => (
-              <>
-                <span className={`text-[22px] transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
-                  ⚙️
-                </span>
-                <span className="text-[10px] font-bold leading-none">
-                  {t('navSettings')}
-                </span>
-              </>
-            )}
+            <span className="text-[22px]">
+              ⚙️
+            </span>
+            <span className="text-[10px] font-bold leading-none">
+              {t('navSettings')}
+            </span>
           </NavLink>
         </div>
         
         {/* Action button - floating on the right */}
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex size-16 items-center justify-center rounded-full border border-white/50 dark:border-white/10 bg-[var(--color-primary)] text-white backdrop-blur-2xl transition-all duration-200 active:scale-90 shadow-lg"
+          className="flex size-16 items-center justify-center rounded-full border border-white/50 dark:border-white/10 bg-[var(--color-primary)] text-white backdrop-blur-2xl active:scale-95 shadow-lg"
           style={{
-            boxShadow: '0 4px 24px rgba(196, 112, 75, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+            boxShadow: '0 4px 24px rgba(196, 112, 75, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            transition: 'transform 150ms ease'
           }}
         >
           <span className="text-2xl">➕</span>
