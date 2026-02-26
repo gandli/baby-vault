@@ -86,12 +86,15 @@ export default function Milestones() {
   const todo = useMemo(() => milestones.filter(m => !m.doneAt), [milestones])
   const progress = useMemo(() => milestones.length ? (done.length / milestones.length) * 100 : 0, [milestones.length, done.length])
 
+  // Stagger animation delays
+  const staggerDelays = [0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 780, 840, 900]
+
   return (
     <div className="px-4 pt-8 pb-28 paper-texture">
       {/* Header */}
       <div className="flex items-center justify-between mb-8 relative">
         <h1 className="text-2xl font-display text-[var(--color-text)]">{t('milestones')}</h1>
-        <div className="sticker animate-stamp">
+        <div className="sticker">
           {done.length}/{milestones.length}
         </div>
       </div>
@@ -122,12 +125,13 @@ export default function Milestones() {
       </div>
 
       {/* Todo milestones */}
-      <div className="space-y-3 stagger-children">
-        {todo.map((m) => (
+      <div className="space-y-3">
+        {todo.map((m, i) => (
           <button
             key={m.id}
             onClick={() => toggle(m.id)}
             className="w-full flex items-center gap-4 p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-primary)] active:scale-[0.98] transition-all duration-300 text-left shadow-sm hover:shadow-md group"
+            style={{ transitionDelay: `${staggerDelays[i] || 0}ms` }}
           >
             <span className="text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">{m.emoji}</span>
             <span className="flex-1 text-[var(--color-text)] font-medium transition-colors group-hover:text-[var(--color-primary)]">{getMilestoneName(m)}</span>
@@ -140,7 +144,7 @@ export default function Milestones() {
 
       {/* Add custom */}
       {adding ? (
-        <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 mb-8 animate-scale-in shadow-sm">
+        <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 mb-8 transition-opacity duration-300 shadow-sm">
           <div className="flex gap-3">
             <input
               type="text"
@@ -182,12 +186,13 @@ export default function Milestones() {
         <>
           <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-widest mt-8 mb-4 pl-1">{t('completed')}</h2>
           <div className="space-y-3">
-            {done.map(m => (
+            {done.map((m, i) => (
               <div
                 key={m.id}
                 className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--color-success-wash)]/50 border border-[var(--color-success)]/30 hover:border-[var(--color-success)] transition-all duration-300"
+                style={{ transitionDelay: `${staggerDelays[i + todo.length] || 0}ms` }}
               >
-                <span className="text-3xl animate-float">{m.emoji}</span>
+                <span className="text-3xl">{m.emoji}</span>
                 <div className="flex-1">
                   <span className="text-[var(--color-text)] font-medium text-lg">{getMilestoneName(m)}</span>
                   <p className="text-xs text-[var(--color-text-light)] mt-1">
@@ -210,10 +215,10 @@ export default function Milestones() {
 
       {/* Date picker modal */}
       {datePickId && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in p-4" onClick={() => setDatePickId(null)}>
-          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-4 space-y-6 animate-scale-in max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setDatePickId(null)}>
+          <div className="bg-[var(--color-bg-card)] rounded-3xl p-6 mx-4 space-y-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="text-center">
-              <span className="text-5xl animate-float">{milestones.find(m => m.id === datePickId)?.emoji}</span>
+              <span className="text-5xl">{milestones.find(m => m.id === datePickId)?.emoji}</span>
               <h2 className="text-[var(--color-text)] font-display text-2xl mt-4 mb-1">
                 🎉 {getMilestoneName(milestones.find(m => m.id === datePickId)!)}
               </h2>
