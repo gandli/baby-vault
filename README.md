@@ -1,18 +1,20 @@
 # 👶 BabyVault
 
-**Secure, private baby growth journal. End-to-end encrypted, family sharing, zero privacy compromise.**
+**Private baby growth journal. Local-first, zero upload, works offline.**
 
 ## What is BabyVault?
 
-A PWA for parents to capture and organize their baby's growth moments — photos, videos, and milestones — with end-to-end encryption. The server never sees your baby's photos.
+A local-first PWA for parents to capture and organize their baby's growth moments — photos, videos, and milestones. All data stays in your browser (IndexedDB + localStorage); nothing is ever uploaded.
+
+> Current status: **MVP** — timeline, milestones, and export are implemented. Cloud sync, E2E encryption, and family sharing are planned (see [PRD](./PRD.md)).
 
 ## Key Features
 
 - 📸 **Photo & Video Capture** — Snap or upload, auto-organized by month age
-- 🔐 **End-to-End Encryption** — Client-side AES-256-GCM, zero-knowledge server
-- 👨👩👧 **Family Sharing** — Invite grandparents via QR code, secure key exchange
 - 🏷️ **Milestones** — First smile, first steps — tag and celebrate every moment
 - 📅 **Month-Age Timeline** — Everything organized around "how old is baby now"
+- 🌐 **Bilingual UI** — Chinese / English / Japanese interface
+- 📤 **Data Export** — One-tap JSON export of everything you've saved
 - 📱 **PWA** — Install on any device, works offline
 
 ## Tech Stack
@@ -20,27 +22,31 @@ A PWA for parents to capture and organize their baby's growth moments — photos
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19 + TypeScript + Vite 7 + Tailwind CSS 4 |
-| Backend | Cloudflare Workers + Hono |
-| Database | Cloudflare D1 (SQLite) |
-| Storage | Cloudflare R2 (zero egress fees) |
-| Encryption | Web Crypto API (client-side E2EE) |
+| Storage | Browser IndexedDB + localStorage (zero upload) |
 | PWA | vite-plugin-pwa (Workbox) |
+| Testing | Vitest + React Testing Library |
 
-## Why BabyVault?
+## Why local-first?
 
-| | BabyVault | Qinbaobao | Google Photos |
-|--|-----------|-----------|---------------|
-| E2E Encryption | ✅ | ❌ | ❌ |
-| Month-Age Timeline | ✅ | ✅ | ❌ |
-| Family Sharing | ✅ | ✅ | ✅ |
-| Ad-Free | ✅ | ❌ | ✅ |
-| Data Export | ✅ | ❌ | ✅ |
-| Open Source | ✅ | ❌ | ❌ |
+| | BabyVault | Cloud baby apps |
+|--|-----------|-----------------|
+| Zero upload | ✅ | ❌ |
+| Works offline | ✅ | ❌ |
+| Ad-free | ✅ | ❌ |
+| Data export | ✅ | varies |
+| Open Source | ✅ | ❌ |
+
+## Getting Started
+
+```bash
+npm install
+npm run dev      # start dev server
+npm run build    # production build
+npm run test:run # run tests once
+```
+
+Deployment to Cloudflare Pages runs automatically on push to `main` via GitHub Actions.
 
 ## Documentation
 
 - [Product Requirements Document (PRD)](./PRD.md)
-
----
-
-Made with 🦞 by BabyVault Team
